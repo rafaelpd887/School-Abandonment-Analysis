@@ -10,7 +10,7 @@ The repository is organized as follows:
 
 - **data/** → Contains raw and processed datasets.
 - **scripts/** → Python scripts for data preprocessing, EDA, feature engineering, modeling, and evaluation.
-  - `eda.py` → Simplified exploratory data analysis.
+  - `eda.py` → Exploratory data analysis.
   - `data_cleaning.py` → Data cleaning and preprocessing (removing NA, type conversions, etc.).
   - `feature_engineering.py` → Creates new features based on domain knowledge and feature interactions.
   - `train_lightgbm.py` → Trains LightGBM regression models.
@@ -46,9 +46,9 @@ The repository is organized as follows:
 |-------|------|----|---------|
 | Original features | 0.5498 | 0.9842 | 1.0001 |
 | Removed high-correlated features | 2.0132 | 0.7885 | 2.3359 |
-| Feature engineered | 1.9342 | 0.8048 | 2.3441 |
+| Feature engineered without high-correlated features | 1.9342 | 0.8048 | 2.3441 |
 
-**Best model for production:** Feature engineered model
+**Best model for production:** to be decided...
 
 ## Objective
 The goal is to build a predictive model that estimates the probability of students dropping out based on school and student characteristics, enabling better intervention strategies and data-driven policy decisions.
