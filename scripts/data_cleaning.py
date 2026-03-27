@@ -44,5 +44,9 @@ df_reduced = df[columns_final].copy()
 # Clean NaN from the target
 df_reduced = df_reduced.dropna(subset=['taxa_abandono_em']).copy()
 
+# Adjusting categories for LightGBM
+df_reduced['localizacao'] = df_reduced['localizacao'].astype('category')
+df_reduced['rede'] = df_reduced['rede'].astype('category')
+
 # Saving
-df_reduced.to_csv("../data/processed/data.csv", index=False)
+df_reduced.to_pickle("../data/processed/data.pkl")
