@@ -1,12 +1,5 @@
 import pandas as pd
 
-# Load the dataset
-#df = pd.read_pickle("data/processed/data.pkl")
-
-# Drop highly correlated columns
-#cols_drop = ['tdi_em', 'taxa_aprovacao_em']
-#df = df.drop(columns=cols_drop)
-
 # =========================
 # Feature Engineering
 # =========================
@@ -35,7 +28,7 @@ def preprocess(df):
 
 
 # =========================
-# Script execution (opcional)
+# Script execution 
 # =========================
 if __name__ == "__main__":
     # Load the dataset
