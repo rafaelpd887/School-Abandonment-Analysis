@@ -1,7 +1,7 @@
 import pandas as pd
 
 #LOAD DATA
-df = pd.read_csv(r"..\data\raw\br_inep_indicadores_educacionais_brasil.csv.gz", compression="gzip")                 
+df = pd.read_csv(r"data\raw\br_inep_indicadores_educacionais_brasil.csv.gz", compression="gzip")                 
 
 #verifying variables
 #columns = list(df.columns)

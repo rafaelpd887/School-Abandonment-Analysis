@@ -2,8 +2,9 @@ import pandas as pd
 import lightgbm as lgb
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, r2_score
+import joblib
 
-df = pd.read_pickle("data/processed/data2.pkl")
+df = pd.read_pickle("../data/processed/data3.pkl")
 
 # =========================
 # 1. Split features and target
@@ -78,10 +79,6 @@ model = lgb.train(
 y_pred = model.predict(X_test)
 
 # =========================
-# 8. Evaluation
+# 8. Saving 
 # =========================
-rmse = mean_squared_error(y_test, y_pred) ** 0.5
-r2 = r2_score(y_test, y_pred)
-
-print(f"RMSE: {rmse:.4f}")
-print(f"R2: {r2:.4f}")
+#joblib.dump(model, "../models/model.pkl")

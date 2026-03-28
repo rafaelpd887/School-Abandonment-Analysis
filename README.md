@@ -5,50 +5,121 @@ This project analyzes school abandonment (dropout) rates and identifies factors 
 
 The project combines **exploratory data analysis (EDA)**, **feature engineering**, and **LightGBM regression modeling** to predict the dropout rate (`taxa_abandono_em`) for each school.
 
+---
+
 ## Project Structure
-The repository is organized as follows:
 
 - **data/** → Contains raw and processed datasets.
 - **scripts/** → Python scripts for data preprocessing, EDA, feature engineering, modeling, and evaluation.
   - `eda.py` → Exploratory data analysis.
-  - `data_cleaning.py` → Data cleaning and preprocessing (removing NA, type conversions, etc.).
-  - `feature_engineering.py` → Creates new features based on domain knowledge and feature interactions.
-  - `train_lightgbm.py` → Trains LightGBM regression models.
-  - `model_evaluation.py` → Evaluates models with metrics like RMSE, R², and cross-validation.
-  - `auxiliar.py` → Helper functions (e.g., inspect variable names, types, basic summaries).
-- **README.md** → Project documentation and results.
+  - `data_cleaning.py` → Data cleaning and preprocessing.
+  - `feature_engineering.py` → Creation of new variables based on interactions and domain insights.
+  - `train_lightgbm.py` → Model training.
+  - `model_evaluation.py` → Model diagnostics (metrics, residuals, feature importance).
+  - `auxiliar.py` → Helper functions.
+- **README.md** → Project documentation.
+
+---
 
 ## Key Variables
-- **localizacao** → School location; captures regional differences in dropout rates.
-- **rede** → School network (public, private, or other); impacts resources and dropout.
-- **atu_em** → Average number of students per class; large classes may increase dropout.
-- **had_em** → Daily class hours; extreme workloads can affect dropout risk.
-- **tdi_em** → Age-grade distortion; more students out of the correct grade increases risk.
-- **taxa_aprovacao_em / taxa_reprovacao_em** → Historical approval and failure rates; included carefully to avoid target leakage.
-- **dsu_em** → Percentage of teachers with higher education; more qualified teachers can reduce dropout.
-- **afd_em_grupo_1** → Teacher adequacy (best-trained group); higher quality teaching reduces abandonment risk.
-- **Engineered features** → e.g., `reprovacao_per_had`, `dsu_per_afd`, `had_plus_afd`; created based on interactions and ratios between existing features.
 
-## Workflow
-1. Work in the `dev` branch.
-2. Add, commit, and push your changes to `dev`.
-3. Merge tested and stable changes from `dev` into `main`.
+- **tdi_em** → Age-grade distortion (strong predictor of dropout).
+- **taxa_aprovacao_em / taxa_reprovacao_em** → Historical performance indicators.
+- **dsu_em** → Percentage of teachers with higher education.
+- **had_em** → Daily class hours.
+- **atu_em** → Students per class.
+- **afd_em_grupo_1** → Teacher adequacy.
+
+### Engineered Features
+Examples:
+- `reprovacao_per_had`
+- `dsu_per_afd`
+- `had_minus_afd`
+- `reprovacao_x_dsu`
+
+These features capture **interactions and ratios** that are not directly observable in the original dataset.
+
+---
 
 ## Methodology
-1. **Exploratory Data Analysis (EDA)** → Understand distributions, missing values, and correlations among variables.
-2. **Feature Engineering** → Remove highly correlated features and create new features to better capture patterns in the data.
-3. **Modeling** → Train LightGBM regression models to predict school dropout rate (`taxa_abandono_em`) using both original and engineered features.
-4. **Evaluation** → Compare models using RMSE, R², and cross-validation RMSE to select the best model for production.
 
-## Results
+1. **EDA**
+   - Analyzed distributions, missing values, and correlations.
+   - Identified strong relationships with the target variable.
+
+2. **Feature Engineering**
+   - Created interaction and ratio-based features.
+   - Tested the impact of removing highly correlated variables.
+
+3. **Modeling**
+   - Used **LightGBM Regressor** for its performance with tabular data.
+   - Trained multiple models with different feature sets.
+
+4. **Evaluation**
+   - Metrics: **RMSE, MAE, R²**
+   - **Cross-validation (5-fold)** to estimate generalization
+   - Residual analysis and feature importance for diagnostics
+
+---
+
+## Model Evolution
 
 | Model | RMSE | R² | CV RMSE |
 |-------|------|----|---------|
 | Original features | 0.5498 | 0.9842 | 1.0001 |
 | Removed high-correlated features | 2.0132 | 0.7885 | 2.3359 |
-| Feature engineered without high-correlated features | 1.9342 | 0.8048 | 2.3441 |
+| Feature engineering (without correlated features) | 1.9342 | 0.8048 | 2.3441 |
+| **Final model (engineered + correlated features)** | **0.9667** | **0.9512** | **1.6155** |
 
-**Best model for production:** to be decided...
+---
+
+## Final Model Selection
+
+The final model combines:
+- **Highly correlated variables** (`tdi_em`, `taxa_aprovacao_em`)
+- **Feature engineered variables**
+
+### Why this approach?
+
+- Removing highly correlated variables reduced performance significantly.
+- These variables are **not deterministic functions of the target**, so they do not constitute true leakage.
+- Feature engineering added complementary information, improving robustness.
+
+### Key Insight
+
+Although `tdi_em` and `taxa_aprovacao_em` are strong predictors, the model does not rely solely on them. Engineered features such as interaction and ratio-based variables also show high importance, indicating that the model captures deeper relationships in the data.
+
+---
+
+## Model Diagnostics
+
+- **Cross-validation RMSE is higher than test RMSE**, which indicates that:
+  - The model is not overfitting heavily
+  - Performance estimates are realistic for unseen data
+
+- **Feature importance analysis** shows:
+  - Strong contribution from core variables
+  - Meaningful impact from engineered features
+
+- **Residual analysis** indicates no major systematic bias
+
+---
+
+## Conclusion
+
+The final model achieves a strong balance between:
+
+- **Predictive performance**
+- **Generalization ability**
+- **Interpretability**
+
+This makes it suitable for real-world applications, such as:
+- Identifying high-risk schools
+- Supporting educational policy decisions
+- Guiding targeted interventions
+
+---
 
 ## Objective
-The goal is to build a predictive model that estimates the probability of students dropping out based on school and student characteristics, enabling better intervention strategies and data-driven policy decisions.
+
+The goal is to build a predictive model that estimates school dropout rates based on institutional and educational factors, enabling **data-driven decision-making** and more effective intervention strategies.

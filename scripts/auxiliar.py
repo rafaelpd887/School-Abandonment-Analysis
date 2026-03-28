@@ -13,3 +13,7 @@ print(y.describe())
 
 df.corr(numeric_only=True)['taxa_abandono_em']\
   .sort_values(ascending=False)
+  
+  print(X.columns)
+  print(X.dtypes)
+
