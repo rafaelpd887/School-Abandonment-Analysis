@@ -1,24 +1,94 @@
 import pandas as pd
 
-#LOAD DATA
-df = pd.read_csv(r"data\raw\br_inep_indicadores_educacionais_brasil.csv.gz", compression="gzip")                 
+# ---------------- CONFIG ---------------- #
 
-#verifying variables
-#columns = list(df.columns)
-#print(columns)
-
-# List of reduced predictor columns
-predictors = [
-    'localizacao',        # school location
-    'rede',               # school network/type
-    'atu_em',             # average students per class - High School
-    'had_em',             # average daily teaching hours - High School
-    'tdi_em',             # age-grade distortion rate - High School
-    'taxa_aprovacao_em',  # historical pass rate - High School
-    'taxa_reprovacao_em', # historical fail rate - High School
-    'dsu_em',             # percentage of teachers with higher education - High School
-    'afd_em_grupo_1'      # teachers with most suitable training (group 1)
+PREDICTORS = [
+    "localizacao",
+    "rede",
+    "atu_em",
+    "had_em",
+    "tdi_em",
+    "taxa_aprovacao_em",
+    "taxa_reprovacao_em",
+    "dsu_em",
+    "afd_em_grupo_1",
 ]
+
+TARGET = "taxa_abandono_em"
+
+
+# ---------------- TRAINING ---------------- #
+def clean_data_train(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Data cleaning for model training.
+
+    - Keeps target column
+    - Drops rows with missing target values
+    """
+
+    df = df.copy()
+
+    # Select relevant columns
+    df = df[PREDICTORS + [TARGET]]
+
+    # Drop rows where target is missing
+    df = df.dropna(subset=[TARGET])
+
+    # Convert categorical features
+    df["localizacao"] = df["localizacao"].astype("category")
+    df["rede"] = df["rede"].astype("category")
+
+    return df
+
+
+# ---------------- INFERENCE ---------------- #
+def clean_data_inference(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Data cleaning for inference (API / dashboard).
+
+    - Uses only feature columns
+    - Does NOT drop rows
+    """
+
+    df = df.copy()
+
+    # Keep only predictors
+    df = df[PREDICTORS]
+
+    # Convert categorical features
+    df["localizacao"] = df["localizacao"].astype("category")
+    df["rede"] = df["rede"].astype("category")
+
+    return df
+
+
+# ---------------- LOAD RAW DATA ---------------- #
+def load_raw_data(path: str) -> pd.DataFrame:
+    """
+    Load raw dataset (supports .csv and .csv.gz)
+    """
+
+    if path.endswith(".gz"):
+        return pd.read_csv(path, compression="gzip")
+    return pd.read_csv(path)
+
+
+# ---------------- SCRIPT ENTRYPOINT ---------------- #
+if __name__ == "__main__":
+    """
+    Run full data cleaning pipeline and save processed dataset
+    """
+
+    df = load_raw_data(
+        "data/raw/br_inep_indicadores_educacionais_brasil.csv.gz"
+    )
+
+    df_clean = clean_data_train(df)
+
+    df_clean.to_pickle("data/processed/data.pkl")
+
+    print("Processed dataset saved to data/processed/data.pkl")
+
 # Variables selected to capture school characteristics, student performance history,
 # and teacher quality, while avoiding target leakage.
 
@@ -34,19 +104,3 @@ predictors = [
 # afd_em_grupo_1-5 → teacher training adequacy. Makes sense, but you may not need all groups separately:
 #     consider using only group 1 (fully adequate teachers) or an aggregated metric (group 1 + group 2)
 #     to simplify and avoid multicollinearity. ⚠️
-
-# Add the target column
-columns_final = predictors + ['taxa_abandono_em']
-
-# Create the reduced DataFrame
-df_reduced = df[columns_final].copy()
-
-# Clean NaN from the target
-df_reduced = df_reduced.dropna(subset=['taxa_abandono_em']).copy()
-
-# Adjusting categories for LightGBM
-df_reduced['localizacao'] = df_reduced['localizacao'].astype('category')
-df_reduced['rede'] = df_reduced['rede'].astype('category')
-
-# Saving
-df_reduced.to_pickle("../data/processed/data.pkl")
