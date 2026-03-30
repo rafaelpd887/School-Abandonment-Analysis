@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, r2_score
 import joblib
 
-df = pd.read_pickle("../data/processed/data3.pkl")
+df = pd.read_pickle("data/processed/data3.pkl")
 
 # =========================
 # 1. Split features and target
