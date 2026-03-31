@@ -85,9 +85,9 @@ if __name__ == "__main__":
 
     df_clean = clean_data_train(df)
 
-    df_clean.to_pickle("data/processed/data.pkl")
+    df_clean.to_csv("data/processed/data.csv", index=False)
 
-    print("Processed dataset saved to data/processed/data.pkl")
+    print("Processed dataset saved to data/processed/data.csv")
 
 # Variables selected to capture school characteristics, student performance history,
 # and teacher quality, while avoiding target leakage.
