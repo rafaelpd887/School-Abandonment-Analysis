@@ -1,3 +1,9 @@
+import sys
+import os
+
+# ADD PROJECT ROOT TO PATH 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 import streamlit as st
 import pandas as pd
 import joblib
@@ -7,9 +13,13 @@ from scripts.feature_engineering import preprocess
 
 # ---------------- CONFIG ---------------- #
 
-st.set_page_config(page_title="School Dropout Prediction", layout="wide")
+st.set_page_config(
+    page_title="School Dropout Prediction",
+    layout="wide"
+)
 
 st.title("📊 School Dropout Prediction Dashboard")
+st.markdown("Predicting and analyzing school dropout rates using Machine Learning")
 
 # ---------------- LOAD MODEL ---------------- #
 
@@ -23,7 +33,7 @@ model = load_model()
 
 @st.cache_data
 def load_data():
-    return pd.read_pickle("data/processed/data.pkl")
+    return pd.read_csv("data/processed/data.csv")
 
 df = load_data()
 
@@ -32,52 +42,75 @@ df = load_data()
 df_model = clean_data_inference(df)
 X = preprocess(df_model)
 
-# ---------------- PREDICTIONS ---------------- #
-
 df["predicted_dropout"] = model.predict(X)
 
-# opcional (se quiser combinar real + previsto)
 if "taxa_abandono_em" in df.columns:
     df["final_dropout"] = df["taxa_abandono_em"].fillna(df["predicted_dropout"])
+else:
+    df["final_dropout"] = df["predicted_dropout"]
 
-# ---------------- UI ---------------- #
+# ---------------- SIDEBAR ---------------- #
 
-st.subheader("Dataset Preview")
-st.dataframe(df.head())
+st.sidebar.header("🔎 Filters")
 
-st.subheader("Dropout Distribution")
-st.hist_chart(df["predicted_dropout"])
-
-st.subheader("Top 10 Schools with Highest Predicted Dropout")
-
-top10 = df.sort_values("predicted_dropout", ascending=False).head(10)
-st.dataframe(top10)
-
-# ---------------- FILTER ---------------- #
-
-st.sidebar.header("Filters")
+filtered_df = df.copy()
 
 if "rede" in df.columns:
-    selected_rede = st.sidebar.selectbox(
-        "Select School Network",
-        options=df["rede"].dropna().unique()
+    redes = df["rede"].dropna().unique()
+    selected_rede = st.sidebar.multiselect(
+        "School Network",
+        options=redes,
+        default=redes
     )
+    filtered_df = filtered_df[filtered_df["rede"].isin(selected_rede)]
 
-    filtered_df = df[df["rede"] == selected_rede]
+if "localizacao" in df.columns:
+    locs = df["localizacao"].dropna().unique()
+    selected_loc = st.sidebar.multiselect(
+        "Location",
+        options=locs,
+        default=locs
+    )
+    filtered_df = filtered_df[filtered_df["localizacao"].isin(selected_loc)]
 
-    st.subheader(f"Filtered Data - {selected_rede}")
-    st.dataframe(filtered_df.head())
+# ---------------- METRICS ---------------- #
+
+st.subheader("📈 Key Metrics")
+
+col1, col2, col3 = st.columns(3)
+
+col1.metric("Avg Dropout", round(filtered_df["final_dropout"].mean(), 4))
+col2.metric("Max Dropout", round(filtered_df["final_dropout"].max(), 4))
+col3.metric("Min Dropout", round(filtered_df["final_dropout"].min(), 4))
+
+# ---------------- CHARTS ---------------- #
+
+st.subheader("📊 Dropout Distribution")
+
+st.bar_chart(filtered_df["final_dropout"].value_counts().sort_index())
+
+# ---------------- TOP SCHOOLS ---------------- #
+
+st.subheader("🏫 Top 10 Schools with Highest Dropout")
+
+top10 = filtered_df.sort_values("final_dropout", ascending=False).head(10)
+st.dataframe(top10)
+
+# ---------------- DATA PREVIEW ---------------- #
+
+st.subheader("📋 Dataset Preview")
+
+st.dataframe(filtered_df.head(50))
 
 # ---------------- DOWNLOAD ---------------- #
 
-st.subheader("Download Predictions")
+st.subheader("⬇️ Download Data")
 
-csv = df.to_csv(index=False).encode("utf-8")
+csv = filtered_df.to_csv(index=False).encode("utf-8")
 
 st.download_button(
-    label="Download CSV",
+    label="Download Filtered Data",
     data=csv,
-    file_name="predictions.csv",
+    file_name="filtered_predictions.csv",
     mime="text/csv",
 )
-
