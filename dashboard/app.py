@@ -1,20 +1,19 @@
+# app_full.py
 import sys
 import os
-
-# ADD PROJECT ROOT TO PATH 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
 import streamlit as st
 import pandas as pd
 import joblib
+
+# ADD PROJECT ROOT
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from scripts.data_cleaning import clean_data_inference
 from scripts.feature_engineering import preprocess
 
 # ---------------- CONFIG ---------------- #
-
 st.set_page_config(
-    page_title="School Dropout Prediction",
+    page_title="School Dropout Prediction Dashboard",
     layout="wide"
 )
 
@@ -22,61 +21,66 @@ st.title("📊 School Dropout Prediction Dashboard")
 st.markdown("Predicting and analyzing school dropout rates using Machine Learning")
 
 # ---------------- LOAD MODEL ---------------- #
-
 @st.cache_resource
 def load_model():
     return joblib.load("models/model.pkl")
 
 model = load_model()
 
-# ---------------- LOAD DATA ---------------- #
-
+# ---------------- LOAD ORIGINAL DATA ---------------- #
 @st.cache_data
-def load_data():
-    return pd.read_csv("data/processed/data.csv")
+def load_raw_data():
+    # Original dataset
+    return pd.read_csv("data/raw/br_inep_indicadores_educacionais_brasil.csv.gz", compression='gzip')
 
-df = load_data()
+df_raw = load_raw_data()
 
-# ---------------- PROCESS DATA ---------------- #
+# ---------------- SEPARATE WITH AND WITHOUT TARGET ---------------- #
+df_with_target = df_raw[df_raw["taxa_abandono_em"].notna()]
+df_without_target = df_raw[df_raw["taxa_abandono_em"].isna()]
 
-df_model = clean_data_inference(df)
-X = preprocess(df_model)
+# ---------------- PROCESSING ---------------- #
+# Apply cleaning and feature engineering
+X_with_target = preprocess(clean_data_inference(df_with_target))
+X_without_target = preprocess(clean_data_inference(df_without_target))
 
-df["predicted_dropout"] = model.predict(X)
+# ---------------- PREDICTION ON OBSERVATIONS WITHOUT TARGET ---------------- #
+df_without_target["predicted_dropout"] = model.predict(X_without_target)
 
-if "taxa_abandono_em" in df.columns:
-    df["final_dropout"] = df["taxa_abandono_em"].fillna(df["predicted_dropout"])
-else:
-    df["final_dropout"] = df["predicted_dropout"]
+# ---------------- CREATING FINAL COLUMN ---------------- #
+df_raw["final_dropout"] = df_raw["taxa_abandono_em"]
+df_raw.loc[df_raw["final_dropout"].isna(), "final_dropout"] = df_without_target["predicted_dropout"]
 
-# ---------------- SIDEBAR ---------------- #
-
+# ---------------- SIDEBAR - FILTERS ---------------- #
 st.sidebar.header("🔎 Filters")
+filtered_df = df_raw.copy()
 
-filtered_df = df.copy()
-
-if "rede" in df.columns:
-    redes = df["rede"].dropna().unique()
+# Rede
+if "rede" in df_raw.columns:
+    redes = df_raw["rede"].dropna().unique()
     selected_rede = st.sidebar.multiselect(
         "School Network",
         options=redes,
         default=redes
     )
-    filtered_df = filtered_df[filtered_df["rede"].isin(selected_rede)]
+    filtered_df = filtered_df[
+        (filtered_df["rede"].isin(selected_rede)) | (filtered_df["rede"].isna())
+    ]
 
-if "localizacao" in df.columns:
-    locs = df["localizacao"].dropna().unique()
+# Localização
+if "localizacao" in df_raw.columns:
+    locs = df_raw["localizacao"].dropna().unique()
     selected_loc = st.sidebar.multiselect(
         "Location",
         options=locs,
         default=locs
     )
-    filtered_df = filtered_df[filtered_df["localizacao"].isin(selected_loc)]
+    filtered_df = filtered_df[
+        (filtered_df["localizacao"].isin(selected_loc)) | (filtered_df["localizacao"].isna())
+    ]
 
 # ---------------- METRICS ---------------- #
-
 st.subheader("📈 Key Metrics")
-
 col1, col2, col3 = st.columns(3)
 
 col1.metric("Avg Dropout", round(filtered_df["final_dropout"].mean(), 4))
@@ -84,33 +88,29 @@ col2.metric("Max Dropout", round(filtered_df["final_dropout"].max(), 4))
 col3.metric("Min Dropout", round(filtered_df["final_dropout"].min(), 4))
 
 # ---------------- CHARTS ---------------- #
-
 st.subheader("📊 Dropout Distribution")
 
-st.bar_chart(filtered_df["final_dropout"].value_counts().sort_index())
+# Round to 2 decimal places
+dropout_counts = filtered_df["final_dropout"].round(2).value_counts().sort_index()
+
+st.bar_chart(dropout_counts)
 
 # ---------------- TOP SCHOOLS ---------------- #
-
 st.subheader("🏫 Top 10 Schools with Highest Dropout")
-
 top10 = filtered_df.sort_values("final_dropout", ascending=False).head(10)
 st.dataframe(top10)
 
 # ---------------- DATA PREVIEW ---------------- #
-
 st.subheader("📋 Dataset Preview")
-
-st.dataframe(filtered_df.head(50))
+st.dataframe(filtered_df)
 
 # ---------------- DOWNLOAD ---------------- #
-
 st.subheader("⬇️ Download Data")
-
 csv = filtered_df.to_csv(index=False).encode("utf-8")
 
 st.download_button(
     label="Download Filtered Data",
     data=csv,
-    file_name="filtered_predictions.csv",
+    file_name="full_predictions.csv",
     mime="text/csv",
 )
