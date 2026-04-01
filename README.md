@@ -50,27 +50,49 @@ This project simulates a real-world ML workflow:
 ## Project Structure
 
 INEP/
+
 │
+
 ├── dashboard/
+
 │ └── app.py
+
 │
+
 ├── scripts/
-│ ├── init.py
+
+│ ├── __init__.py
+
 │ ├── eda.py
+
 │ ├── data_cleaning.py
+
 │ ├── feature_engineering.py
+
 │ ├── train_lightgbm.py
+
 │ ├── model_evaluation.py
+
 │ └── auxiliar.py
+
 │
+
 ├── models/
+
 │ └── model.pkl
+
 │
+
 ├── data/
+
 │ └── processed/
+
 │ └── data.csv
+
 │
+
 ├── requirements.txt
+
 └── README.md
 
 
