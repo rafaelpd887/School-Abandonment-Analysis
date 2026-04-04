@@ -30,26 +30,20 @@ model = load_model()
 # ---------------- LOAD ORIGINAL DATA ---------------- #
 @st.cache_data
 def load_raw_data():
-    # Original dataset
-    return pd.read_csv("data/raw/br_inep_indicadores_educacionais_brasil.csv.gz", compression='gzip')
+    return pd.read_csv(
+        "data/raw/br_inep_indicadores_educacionais_brasil.csv.gz",
+        compression='gzip'
+    )
 
 df_raw = load_raw_data()
 
-# ---------------- SEPARATE WITH AND WITHOUT TARGET ---------------- #
-df_with_target = df_raw[df_raw["taxa_abandono_em"].notna()]
-df_without_target = df_raw[df_raw["taxa_abandono_em"].isna()]
+# ---------------- PROCESSING + PREDICTION ---------------- #
+X_all = preprocess(clean_data_inference(df_raw))
+df_raw["predicted_dropout"] = model.predict(X_all)
 
-# ---------------- PROCESSING ---------------- #
-# Apply cleaning and feature engineering
-X_with_target = preprocess(clean_data_inference(df_with_target))
-X_without_target = preprocess(clean_data_inference(df_without_target))
-
-# ---------------- PREDICTION ON OBSERVATIONS WITHOUT TARGET ---------------- #
-df_without_target["predicted_dropout"] = model.predict(X_without_target)
-
-# ---------------- CREATING FINAL COLUMN ---------------- #
+# ---------------- FINAL COLUMN ---------------- #
 df_raw["final_dropout"] = df_raw["taxa_abandono_em"]
-df_raw.loc[df_raw["final_dropout"].isna(), "final_dropout"] = df_without_target["predicted_dropout"]
+df_raw.loc[df_raw["final_dropout"].isna(), "final_dropout"] = df_raw["predicted_dropout"]
 
 # ---------------- SIDEBAR - FILTERS ---------------- #
 st.sidebar.header("🔎 Filters")
@@ -90,15 +84,45 @@ col3.metric("Min Dropout", round(filtered_df["final_dropout"].min(), 4))
 # ---------------- CHARTS ---------------- #
 st.subheader("📊 Dropout Distribution")
 
-# Round to 2 decimal places
 dropout_counts = filtered_df["final_dropout"].round(2).value_counts().sort_index()
-
 st.bar_chart(dropout_counts)
 
 # ---------------- TOP SCHOOLS ---------------- #
 st.subheader("🏫 Top 10 Schools with Highest Dropout")
+
 top10 = filtered_df.sort_values("final_dropout", ascending=False).head(10)
-st.dataframe(top10)
+
+cols = [
+    "localizacao",
+    "rede",
+    "atu_em",
+    "had_em",
+    "tdi_em",
+    "taxa_aprovacao_em",
+    "taxa_reprovacao_em",
+    "dsu_em",
+    "afd_em_grupo_1",
+    "taxa_abandono_em",
+    "predicted_dropout"
+]
+
+cols = [col for col in cols if col in top10.columns]
+
+top10_display = top10[cols].rename(columns={
+    "localizacao": "Location",
+    "rede": "Network",
+    "atu_em": "Attendance",
+    "had_em": "Dropout History",
+    "tdi_em": "Age-Grade Distortion",
+    "taxa_aprovacao_em": "Approval Rate",
+    "taxa_reprovacao_em": "Failure Rate",
+    "dsu_em": "Socioeconomic Index",
+    "afd_em_grupo_1": "Teacher Qualification",
+    "taxa_abandono_em": "Actual Dropout",
+    "predicted_dropout": "Predicted Dropout"
+})
+
+st.dataframe(top10_display)
 
 # ---------------- DATA PREVIEW ---------------- #
 st.subheader("📋 Dataset Preview")
