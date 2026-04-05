@@ -2,3 +2,4 @@
 __pycache__/
 *.pyc
 notebooks/.ipynb_checkpoints/
+notebooks/eda_notebook.ipynb linguist-generated=true
