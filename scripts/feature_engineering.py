@@ -32,7 +32,7 @@ def preprocess(df):
 # =========================
 if __name__ == "__main__":
     # Load the dataset
-    df = pd.read_pickle("data/processed/data.pkl")
+    df = pd.read_parquet("../data/processed/data.parquet")
 
     # Apply preprocessing
     df = preprocess(df)
@@ -42,4 +42,5 @@ if __name__ == "__main__":
     print(df.columns)
 
     # Save processed dataset
-    df.to_pickle("../data/processed/data3.pkl")
+    df.to_parquet("../data/processed/data3.parquet", index=False)
+    

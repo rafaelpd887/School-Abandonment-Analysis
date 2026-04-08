@@ -80,12 +80,12 @@ if __name__ == "__main__":
     """
 
     df = load_raw_data(
-        "data/raw/br_inep_indicadores_educacionais_brasil.csv.gz"
+        "../data/raw/br_inep_indicadores_educacionais_brasil.csv.gz"
     )
 
     df_clean = clean_data_train(df)
 
-    df_clean.to_csv("data/processed/data.csv", index=False)
+    df_clean.to_parquet("../data/processed/data.parquet", index=False)
 
     print("Processed dataset saved to data/processed/data.csv")
 
