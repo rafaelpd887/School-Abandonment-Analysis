@@ -23,7 +23,7 @@ st.markdown("Predicting and analyzing school dropout rates using Machine Learnin
 # ---------------- LOAD MODEL ---------------- #
 @st.cache_resource
 def load_model():
-    return joblib.load("models/model.pkl")
+    return joblib.load("models/model2.pkl")
 
 model = load_model()
 

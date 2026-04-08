@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, r2_score
 import joblib
 
-df = pd.read_pickle("data/processed/data3.pkl")
+df = pd.read_parquet("../data/processed/data3.parquet")
 
 # =========================
 # 1. Split features and target
@@ -81,4 +81,4 @@ y_pred = model.predict(X_test)
 # =========================
 # 8. Saving 
 # =========================
-#joblib.dump(model, "../models/model.pkl")
+joblib.dump(model, "../models/model2.pkl")
